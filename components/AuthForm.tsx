@@ -1,5 +1,3 @@
-'use client'
-
 import { useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 
@@ -16,7 +14,6 @@ export default function AuthForm() {
     setError(null)
 
     if (isLogin) {
-      // Sign in
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -26,7 +23,6 @@ export default function AuthForm() {
         setError(error.message)
       }
     } else {
-      // Sign up
       const { error } = await supabase.auth.signUp({
         email,
         password,

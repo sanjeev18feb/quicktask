@@ -1,6 +1,3 @@
-// components/TaskList.tsx
-'use client'
-
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 
@@ -77,14 +74,12 @@ export default function TaskList({ refresh }: { refresh: boolean }) {
               <p className="text-sm text-gray-600 dark:text-gray-300">{task.description}</p>
             )}
 
-            {/* Due date */}
             {task.due_date && (
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 Due: {new Date(task.due_date).toLocaleDateString()}
               </p>
             )}
 
-            {/* Priority */}
             {task.priority && (
               <p className="text-sm mt-1">
                 Priority:{' '}
