@@ -8,7 +8,7 @@ type Task = {
   id: number
   title: string
   description: string | null
-  is_complete: boolean
+  status: 'new' | 'in_progress' | 'complete'
   created_at: string
   due_date: string | null
   priority: string | null
@@ -37,13 +37,17 @@ export default function TaskList({ refresh }: { refresh: boolean }) {
     fetchTasks()
   }, [refresh])
 
-  const toggleComplete = async (task: Task) => {
-    await supabase
+  const updateStatus = async (taskId: number, newStatus: Task['status']) => {
+    const { error } = await supabase
       .from('tasks')
-      .update({ is_complete: !task.is_complete })
-      .eq('id', task.id)
+      .update({ status: newStatus })
+      .eq('id', taskId)
 
-    fetchTasks()
+    if (error) {
+      console.error('Error updating status:', error.message)
+    } else {
+      fetchTasks()
+    }
   }
 
   const deleteTask = async (id: number) => {
@@ -64,7 +68,7 @@ export default function TaskList({ refresh }: { refresh: boolean }) {
           <div>
             <h3
               className={`text-lg font-semibold ${
-                task.is_complete ? 'line-through text-gray-400' : ''
+                task.status === 'complete' ? 'line-through text-gray-400' : ''
               }`}
             >
               {task.title}
@@ -98,18 +102,28 @@ export default function TaskList({ refresh }: { refresh: boolean }) {
               </p>
             )}
           </div>
-          <div className="space-x-2 flex flex-col items-end">
-            <button
-              onClick={() => toggleComplete(task)}
-              className={`px-3 py-1 rounded text-sm ${
-                task.is_complete ? 'bg-yellow-500' : 'bg-green-600'
-              } text-white hover:opacity-90`}
+
+          <div className="flex flex-col items-end space-y-2">
+            <select
+              value={task.status}
+              onChange={(e) => updateStatus(task.id, e.target.value as Task['status'])}
+              className={`px-3 py-1 rounded text-sm text-white ${
+                task.status === 'new'
+                  ? 'bg-blue-600'
+                  : task.status === 'in_progress'
+                  ? 'bg-yellow-500'
+                  : 'bg-green-600'
+              } cursor-pointer`}
+              aria-label={`Change status for task ${task.title}`}
             >
-              {task.is_complete ? 'Undo' : 'Complete'}
-            </button>
+              <option value="new">New</option>
+              <option value="in_progress">In Progress</option>
+              <option value="complete">Complete</option>
+            </select>
+
             <button
               onClick={() => deleteTask(task.id)}
-              className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:opacity-90 mt-2"
+              className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:opacity-90"
             >
               Delete
             </button>

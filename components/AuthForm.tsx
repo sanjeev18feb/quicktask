@@ -42,10 +42,17 @@ export default function AuthForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-md mx-auto p-6 bg-white rounded shadow">
-      <h2 className="text-xl font-semibold mb-4">{isLogin ? 'Login' : 'Sign Up'}</h2>
+    <form
+      onSubmit={handleSubmit}
+      className="max-w-md mx-auto p-6 bg-white dark:bg-gray-800 rounded shadow"
+    >
+      <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">
+        {isLogin ? 'Login' : 'Sign Up'}
+      </h2>
 
-      {error && <p className="text-red-600 mb-2">{error}</p>}
+      {error && (
+        <p className="text-red-600 dark:text-red-400 mb-2">{error}</p>
+      )}
 
       <input
         type="email"
@@ -53,7 +60,7 @@ export default function AuthForm() {
         required
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        className="w-full mb-3 p-2 border rounded"
+        className="w-full mb-3 p-2 border border-gray-300 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
       />
       <input
         type="password"
@@ -61,23 +68,23 @@ export default function AuthForm() {
         required
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        className="w-full mb-3 p-2 border rounded"
+        className="w-full mb-3 p-2 border border-gray-300 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
       />
 
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+        className="w-full bg-blue-600 hover:bg-blue-700 transition text-white py-2 rounded disabled:opacity-50"
       >
         {loading ? 'Loading...' : isLogin ? 'Login' : 'Sign Up'}
       </button>
 
-      <p className="mt-4 text-center text-sm text-gray-600">
+      <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
         {isLogin ? 'New here?' : 'Already have an account?'}{' '}
         <button
           type="button"
           onClick={() => setIsLogin(!isLogin)}
-          className="text-blue-600 hover:underline"
+          className="text-blue-600 dark:text-blue-400 hover:underline"
         >
           {isLogin ? 'Create an account' : 'Login'}
         </button>

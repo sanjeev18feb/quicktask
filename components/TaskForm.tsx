@@ -1,4 +1,3 @@
-// components/TaskForm.tsx
 'use client'
 
 import { useState } from 'react'
@@ -24,6 +23,7 @@ export default function TaskForm({ onTaskCreated }: { onTaskCreated: () => void 
         is_complete: false,
         due_date: dueDate ? new Date(dueDate).toISOString() : null,
         priority,
+        status: 'new',
       },
     ])
 
@@ -59,7 +59,7 @@ export default function TaskForm({ onTaskCreated }: { onTaskCreated: () => void 
         onChange={(e) => setDescription(e.target.value)}
       />
 
-      <div className="flex space-x-4">
+      <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0">
         <div className="flex flex-col flex-1">
           <label htmlFor="dueDate" className="mb-1 text-sm font-medium">Due Date</label>
           <input
@@ -67,7 +67,7 @@ export default function TaskForm({ onTaskCreated }: { onTaskCreated: () => void 
             id="dueDate"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
-            className="p-2 border border-gray-300 dark:border-gray-700 rounded bg-gray-50 dark:bg-gray-700"
+            className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded bg-gray-50 dark:bg-gray-700"
           />
         </div>
 
@@ -77,7 +77,7 @@ export default function TaskForm({ onTaskCreated }: { onTaskCreated: () => void 
             id="priority"
             value={priority}
             onChange={(e) => setPriority(e.target.value)}
-            className="p-2 border border-gray-300 dark:border-gray-700 rounded bg-gray-50 dark:bg-gray-700"
+            className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded bg-gray-50 dark:bg-gray-700"
           >
             <option>Low</option>
             <option>Medium</option>
@@ -88,7 +88,7 @@ export default function TaskForm({ onTaskCreated }: { onTaskCreated: () => void 
 
       <button
         type="submit"
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+        className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition disabled:opacity-50"
         disabled={loading}
       >
         {loading ? 'Creating...' : 'Add Task'}
