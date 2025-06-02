@@ -11,6 +11,33 @@ export default function Home() {
   const [user, setUser] = useState<any>(null)
   const [refresh, setRefresh] = useState(false)
   const [profile, setProfile] = useState<any>(null)
+  const [isDark, setIsDark] = useState(false)
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme')
+    if (
+      savedTheme === 'dark' ||
+      (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)
+    ) {
+      document.documentElement.classList.add('dark')
+      setIsDark(true)
+    } else {
+      document.documentElement.classList.remove('dark')
+      setIsDark(false)
+    }
+  }, [])
+
+  const toggleTheme = () => {
+    if (document.documentElement.classList.contains('dark')) {
+      document.documentElement.classList.remove('dark')
+      localStorage.setItem('theme', 'light')
+      setIsDark(false)
+    } else {
+      document.documentElement.classList.add('dark')
+      localStorage.setItem('theme', 'dark')
+      setIsDark(true)
+    }
+  }
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -24,9 +51,7 @@ export default function Home() {
           .eq('id', currentUser.id)
           .single()
 
-        if (!error) {
-          setProfile(profileData)
-        }
+        if (!error) setProfile(profileData)
       }
     })
 
@@ -41,9 +66,7 @@ export default function Home() {
           .eq('id', loggedInUser.id)
           .single()
           .then(({ data: profileData, error }) => {
-            if (!error) {
-              setProfile(profileData)
-            }
+            if (!error) setProfile(profileData)
           })
       }
     })
@@ -60,11 +83,11 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white p-4 sm:p-6">
+    <main className={`min-h-screen ${isDark ? 'bg-red-900' : 'bg-sky-200'} text-gray-900 dark:text-white p-4 sm:p-6`}>
       <div className="max-w-3xl mx-auto w-full">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-center flex-grow">DASHBOARD</h1>
-          <ThemeToggle />
+          <ThemeToggle isDark={isDark} toggleTheme={toggleTheme} />
         </div>
 
         <div className="flex justify-between items-center mb-4">
@@ -75,12 +98,8 @@ export default function Home() {
             Logout
           </button>
           <div className="text-lg font-bold sm:text-base text-gray-800 dark:text-gray-200 text-right">
-            <p>
-              Name: <span className="font-medium">{profile?.name ?? 'Loading...'}</span>
-            </p>
-            <p>
-              Email: <span className="font-medium">{user.email}</span>
-            </p>
+            <p>Name: <span className="font-medium">{profile?.name ?? 'Loading...'}</span></p>
+            <p>Email: <span className="font-medium">{user.email}</span></p>
           </div>
         </div>
 
@@ -94,6 +113,5 @@ export default function Home() {
         </div>
       </div>
     </main>
-
   )
 }
