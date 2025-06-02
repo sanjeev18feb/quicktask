@@ -2,6 +2,20 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 type Task = {
   id: number
@@ -37,16 +51,8 @@ export default function TaskList({ refresh }: { refresh: boolean }) {
   }, [refresh])
 
   const updateStatus = async (taskId: number, newStatus: Task['status']) => {
-    const { error } = await supabase
-      .from('tasks')
-      .update({ status: newStatus })
-      .eq('id', taskId)
-
-    if (error) {
-      console.error('Error updating status:', error.message)
-    } else {
-      fetchTasks()
-    }
+    await supabase.from('tasks').update({ status: newStatus }).eq('id', taskId)
+    fetchTasks()
   }
 
   const deleteTask = async (id: number) => {
@@ -54,79 +60,142 @@ export default function TaskList({ refresh }: { refresh: boolean }) {
     fetchTasks()
   }
 
-  if (loading) return <p className="text-center">Loading tasks...</p>
-  if (!tasks.length) return <p className="text-center">No tasks found.</p>
+  const sensors = useSensors(useSensor(PointerSensor))
 
-  return (
-    <ul className="space-y-4">
-      {tasks.map((task) => (
-        <li
-          key={task.id}
-          className="bg-white dark:bg-gray-800 p-4 rounded shadow flex justify-between items-start"
-        >
-          <div>
-            <h3
-              className={`text-lg font-semibold ${
-                task.status === 'complete' ? 'line-through text-gray-400' : ''
-              }`}
-            >
-              {task.title}
-            </h3>
-            {task.description && (
-              <p className="text-sm text-gray-600 dark:text-gray-300">{task.description}</p>
-            )}
+  const handleDragEnd = (event: any) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
 
-            {task.due_date && (
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Due: {new Date(task.due_date).toLocaleDateString()}
-              </p>
-            )}
+    const oldIndex = tasks.findIndex((task) => task.id === active.id)
+    const newIndex = tasks.findIndex((task) => task.id === over.id)
 
-            {task.priority && (
-              <p className="text-sm mt-1">
-                Priority:{' '}
-                <span
-                  className={
-                    task.priority === 'High'
-                      ? 'text-red-600 font-semibold'
-                      : task.priority === 'Medium'
-                      ? 'text-yellow-500 font-semibold'
-                      : 'text-green-600 font-semibold'
-                  }
-                >
-                  {task.priority}
-                </span>
-              </p>
-            )}
+    const newTasks = arrayMove(tasks, oldIndex, newIndex)
+    setTasks(newTasks)
+  }
+
+  const SortableItem = ({ task, index }: { task: Task; index: number }) => {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+    } = useSortable({ id: task.id })
+
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+    }
+
+    return (
+      <li
+        ref={setNodeRef}
+        style={style}
+        {...attributes}
+        {...listeners}
+        className="bg-white dark:bg-gray-900 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm"
+      >
+
+        <div className="text-gray-500 font-semibold mb-2">Task {index + 1}</div>
+
+        <div className="mb-2">
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-1 inline">Name: </h3>
+          <p className={`text-xl font-normal inline ${task.status === 'complete' ? 'line-through text-gray-300' : 'text-gray-600 dark:text-gray-100'}`}>
+            {task.title}
+          </p>
+        </div>
+
+        {task.description && (
+          <div className="mb-2">
+            <span className="text-lg font-semibold text-gray-800 dark:text-white">
+              Description:{' '}
+              <span className="font-normal text-gray-700 dark:text-gray-300">
+                {task.description}
+              </span>
+            </span>
           </div>
+        )}
 
-          <div className="flex flex-col items-end space-y-2">
+        {task.due_date && (
+          <div className="mb-2">
+            <span className="text-lg font-semibold text-gray-800 dark:text-white">
+              Due:{' '}
+              <span className="font-normal text-gray-700 dark:text-gray-300">
+                {new Date(task.due_date).toLocaleDateString()}
+              </span>
+            </span>
+          </div>
+        )}
+
+        {task.priority && (
+          <div className="mb-2">
+            <span className="text-lg text-gray-800 dark:text-white mb-4">
+              <strong>Priority:</strong>{' '}
+              <span
+                className={
+                  task.priority === 'High'
+                    ? 'text-red-600'
+                    : task.priority === 'Medium'
+                      ? 'text-yellow-600'
+                      : 'text-green-600'
+                }
+              >
+                {task.priority}
+              </span>
+            </span>
+          </div>
+        )}
+
+        <div className="mb-2">
+          <span className="text-lg font-semibold text-gray-800 dark:text-white">
+            Status:{' '}
             <select
               value={task.status}
               onChange={(e) => updateStatus(task.id, e.target.value as Task['status'])}
-              className={`px-3 py-1 rounded text-sm text-white ${
-                task.status === 'new'
-                  ? 'bg-blue-600'
+              className={`ml-1 px-2 py-1 border rounded bg-white dark:bg-gray-800 font-normal ${task.status === 'new'
+                  ? 'text-blue-600'
                   : task.status === 'in_progress'
-                  ? 'bg-yellow-500'
-                  : 'bg-green-600'
-              } cursor-pointer`}
-              aria-label={`Change status for task ${task.title}`}
+                    ? 'text-yellow-600'
+                    : 'text-green-600'
+                }`}
             >
               <option value="new">New</option>
               <option value="in_progress">In Progress</option>
-              <option value="complete">Complete</option>
+              <option value="complete">Completed</option>
             </select>
+          </span>
+        </div>
 
+        <div className="flex gap-4 mt-4">
+          {task.status !== 'complete' && (
             <button
               onClick={() => deleteTask(task.id)}
               className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:opacity-90"
             >
               Delete
             </button>
-          </div>
-        </li>
-      ))}
-    </ul>
+          )}
+        </div>
+      </li>
+    )
+  }
+
+  if (loading) return <p className="text-center">Loading tasks...</p>
+  if (!tasks.length) return <p className="text-center">No tasks found.</p>
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-white text-center">Task List</h2>
+
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={tasks.map((task) => task.id)} strategy={verticalListSortingStrategy}>
+          <ul className="space-y-6">
+            {tasks.map((task, index) => (
+              <SortableItem key={task.id} task={task} index={index} />
+            ))}
+          </ul>
+        </SortableContext>
+      </DndContext>
+    </div>
   )
 }

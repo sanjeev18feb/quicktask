@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
 
 export default function TaskForm({ onTaskCreated }: { onTaskCreated: () => void }) {
@@ -9,10 +9,28 @@ export default function TaskForm({ onTaskCreated }: { onTaskCreated: () => void 
   const [dueDate, setDueDate] = useState('')
   const [priority, setPriority] = useState('Medium')
   const [loading, setLoading] = useState(false)
+  const [userId, setUserId] = useState<string | null>(null)
+
+  useEffect(() => {
+    const getUserId = async () => {
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser()
+
+      if (user) {
+        setUserId(user.id)
+      } else {
+        console.error('No user found:', error?.message)
+      }
+    }
+
+    getUserId()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!title) return
+    if (!title || !userId) return
 
     setLoading(true)
 
@@ -24,6 +42,7 @@ export default function TaskForm({ onTaskCreated }: { onTaskCreated: () => void 
         due_date: dueDate ? new Date(dueDate).toISOString() : null,
         priority,
         status: 'new',
+        user_id: userId, 
       },
     ])
 

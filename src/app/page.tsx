@@ -10,14 +10,42 @@ import ThemeToggle from '../../components/ThemeToggle'
 export default function Home() {
   const [user, setUser] = useState<any>(null)
   const [refresh, setRefresh] = useState(false)
+  const [profile, setProfile] = useState<any>(null)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user ?? null)
+    supabase.auth.getSession().then(async ({ data }) => {
+      const currentUser = data.session?.user ?? null
+      setUser(currentUser)
+
+      if (currentUser) {
+        const { data: profileData, error } = await supabase
+          .from('profiles')
+          .select('name')
+          .eq('id', currentUser.id)
+          .single()
+
+        if (!error) {
+          setProfile(profileData)
+        }
+      }
     })
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
+      const loggedInUser = session?.user ?? null
+      setUser(loggedInUser)
+
+      if (loggedInUser) {
+        supabase
+          .from('profiles')
+          .select('name')
+          .eq('id', loggedInUser.id)
+          .single()
+          .then(({ data: profileData, error }) => {
+            if (!error) {
+              setProfile(profileData)
+            }
+          })
+      }
     })
 
     return () => {
@@ -34,25 +62,34 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white p-4 sm:p-6">
       <div className="max-w-3xl mx-auto w-full">
-      <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-center flex-grow">📝 QuickTask Dashboard</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-center flex-grow">DASHBOARD</h1>
           <ThemeToggle />
         </div>
 
-        <button
-          onClick={() => supabase.auth.signOut()}
-          className="w-full sm:w-auto mb-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-        >
-          Logout
-        </button>
+        <div className="flex justify-between items-center mb-4">
+          <button
+            onClick={() => supabase.auth.signOut()}
+            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+          >
+            Logout
+          </button>
+          <div className="text-lg font-bold sm:text-base text-gray-800 dark:text-gray-200 text-right">
+            <p>
+              Name: <span className="font-medium">{profile?.name ?? 'Loading...'}</span>
+            </p>
+            <p>
+              Email: <span className="font-medium">{user.email}</span>
+            </p>
+          </div>
+        </div>
 
         <div className="bg-white dark:bg-gray-800 shadow rounded p-4 sm:p-6 mb-8">
-          <h2 className="text-lg sm:text-xl font-semibold mb-4">Create a New Task</h2>
+          <h2 className="text-lg sm:text-xl text-center font-semibold mb-4">TASK</h2>
           <TaskForm onTaskCreated={triggerRefresh} />
         </div>
 
         <div className="bg-white dark:bg-gray-800 shadow rounded p-4 sm:p-6">
-          <h2 className="text-lg sm:text-xl font-semibold mb-4">Your Tasks</h2>
           <TaskList refresh={refresh} />
         </div>
       </div>

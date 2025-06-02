@@ -6,6 +6,8 @@ import { supabase } from '../lib/supabaseClient'
 export default function AuthForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isLogin, setIsLogin] = useState(true)
@@ -25,7 +27,7 @@ export default function AuthForm() {
         setError(error.message)
       }
     } else {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
       })
@@ -33,9 +35,27 @@ export default function AuthForm() {
       if (error) {
         setError(error.message)
       } else {
-        alert('Check your email for confirmation link!')
+        const user = data.user
+        if (user) {
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert([
+              {
+                id: user.id, // This matches auth.users.id
+                name,
+                phone,
+              },
+            ])
+
+          if (insertError) {
+            setError(insertError.message)
+          } else {
+            alert('Check your email for confirmation link!')
+          }
+        }
       }
     }
+
     setLoading(false)
   }
 
@@ -50,6 +70,27 @@ export default function AuthForm() {
 
       {error && (
         <p className="text-red-600 dark:text-red-400 mb-2">{error}</p>
+      )}
+
+      {!isLogin && (
+        <>
+          <input
+            type="text"
+            placeholder="Name"
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full mb-3 p-2 border border-gray-300 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+          />
+          <input
+            type="tel"
+            placeholder="Phone Number"
+            required
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            className="w-full mb-3 p-2 border border-gray-300 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+          />
+        </>
       )}
 
       <input
